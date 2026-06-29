@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 
 # Enterprise configuration paths
 DATA_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/00350/default%20of%20credit%20card%20clients.xls"
-RAW_DATA_PATH = "data/raw/credit_card_default.xls"
+RAW_DATA_PATH = "data/raw/credit_card_default.xlsx"
 TRAIN_DATA_PATH = "data/processed/train.csv"
 TEST_DATA_PATH = "data/processed/test.csv"
 
