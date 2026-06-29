@@ -33,7 +33,7 @@ def run_scorecard_calibration():
     log_reg = LogisticRegression(C=0.1, max_iter=1000, random_state=42)
     
     print("[-] Building enterprise scorecard using institutional scaling configurations...")
-    # FIX: Changed scaling_method from "pdo" to "pd_odds"
+    # Calibrate points matching: 600 score represents 50:1 Good/Bad odds; 20 points doubles the odds
     scorecard = Scorecard(
         binning_process=binning_process,
         estimator=log_reg,
