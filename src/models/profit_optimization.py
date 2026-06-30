@@ -69,7 +69,7 @@ def run_portfolio_profit_optimization():
     
     print("\n=================== C-SUITE FINANCIAL OPTIMIZATION REPORT ===================")
     print(f"Optimal Portfolio Cutoff Credit Score: {int(optimal_row['cutoff_score'])}")
-    print(f"Projected Max Portfolio Net Profit:    ${optimal_row['net_profit_usd']_usd:,.2f}" if 'net_profit_usd' in optimal_row else f"Projected Max Portfolio Net Profit:    ${optimal_row['net_profit_usd']:,.2f}")
+    print(f"Projected Max Portfolio Net Profit:    ${optimal_row['net_profit_usd']:,.2f}" if 'net_profit_usd' in optimal_row else f"Projected Max Portfolio Net Profit:    ${optimal_row['net_profit_usd']:,.2f}")
     print(f"Portfolio Non-Performing Loan (NPL) Rate: {optimal_row['npl_ratio']:.2%}")
     print(f"Total Approved Applicants:             {int(optimal_row['approved_count'])} out of {len(test_df)}")
     print("=============================================================================\n")
