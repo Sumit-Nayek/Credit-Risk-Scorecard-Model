@@ -32,16 +32,14 @@ def run_scorecard_calibration():
     # Establish production L2-penalized Logistic Regression
     log_reg = LogisticRegression(C=0.1, max_iter=1000, random_state=42)
     
-    print("[-] Building enterprise scorecard using institutional scaling configurations...")
-    # Calibrate points matching: 600 score represents 50:1 Good/Bad odds; 20 points doubles the odds
+    print("[-] Building enterprise scorecard using FICO min_max (300-850) configurations...")
     scorecard = Scorecard(
         binning_process=binning_process,
         estimator=log_reg,
-        scaling_method="pd_odds",
+        scaling_method="min_max",
         scaling_method_params={
-            "target_score": 600,
-            "target_odds": 50.0,
-            "pdo": 20.0
+            "min": 300,
+            "max": 850
         }
     )
     
@@ -52,6 +50,7 @@ def run_scorecard_calibration():
     train_scores = scorecard.score(X_train[selected_features])
     test_scores = scorecard.score(X_test[selected_features])
     
+    # Higher credit scores mean lower risk of default, so we invert the scores for AUC tracking
     train_auc = roc_auc_score(y_train, -train_scores)
     test_auc = roc_auc_score(y_test, -test_scores)
     
@@ -60,13 +59,13 @@ def run_scorecard_calibration():
     print(f"Calibrated Test ROC-AUC:  {test_auc:.4f}")
     print("===================================================================\n")
     
-    # Extract the actual point lookup table
-    scorecard_df = scorecard.table()
+    # FIX: Explicitly pass style="detailed" to include WoE and Coefficient columns
+    scorecard_df = scorecard.table(style="detailed")
     
     print("[-] Displaying slice of the calibrated point assignment matrix...")
     print(scorecard_df[['Variable', 'Bin', 'WoE', 'Coefficient', 'Points']].head(15).to_string(index=False))
     
-    # Save the scorecard rule sheet to disk for our Week 4 API to look up
+    # Save the full detailed sheet to disk for our Week 4 API to look up
     os.makedirs(os.path.dirname(SCORECARD_OUTPUT_PATH), exist_ok=True)
     scorecard_df.to_csv(SCORECARD_OUTPUT_PATH, index=False)
     print(f"\n[+] Production scorecard lookup matrix archived at: {SCORECARD_OUTPUT_PATH}")
