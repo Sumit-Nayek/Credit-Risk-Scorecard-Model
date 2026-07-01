@@ -1,6 +1,6 @@
 # 💳 Credit Risk Scorecard Model
 
-A machine learning project for building an interpretable **credit risk scorecard**, designed to estimate a borrower's probability of default (PD) and convert it into an easy-to-understand credit score — similar to models used by banks and lending institutions.
+A machine learning project for building an interpretable **credit risk scorecard**, designed to estimate a borrower's probability of default (PD) and convert it into an easy-to-understand credit score similar to models used by banks and lending institutions.
 
 ---
 
