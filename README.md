@@ -1,4 +1,4 @@
-# 💳 Credit Risk Scorecard Model
+<img width="1408" height="768" alt="Gemini_Generated_Image_48t28x48t28x48t2" src="https://github.com/user-attachments/assets/fba5ccfe-255f-4605-a118-f40ad93badad" />
 
 A machine learning project for building an interpretable **credit risk scorecard**, designed to estimate a borrower's probability of default (PD) and convert it into an easy-to-understand credit score similar to models used by banks and lending institutions.
 
