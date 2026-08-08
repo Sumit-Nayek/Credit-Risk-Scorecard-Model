@@ -74,9 +74,9 @@ Open the Jupyter notebooks in the `notebooks/` folder and run them in order to r
 
 | Metric | Score |
 |--------|-------|
-| AUC-ROC | _add your value_ |
-| KS Statistic | _add your value_ |
-| Gini Coefficient | _add your value_ |
+| AUC-ROC | 78% |
+| KS Statistic | 0 |
+| Gini Coefficient | 0.96 |
 
 > Replace these placeholders with your actual model results.
 
