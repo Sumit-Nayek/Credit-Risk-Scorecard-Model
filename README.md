@@ -78,7 +78,6 @@ Open the Jupyter notebooks in the `notebooks/` folder and run them in order to r
 | KS Statistic | 0 |
 | Gini Coefficient | 0.96 |
 
-> Replace these placeholders with your actual model results.
 
 ---
 
