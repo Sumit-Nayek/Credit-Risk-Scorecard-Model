@@ -96,8 +96,9 @@ This project is open-source. Add your preferred license (e.g., MIT) here.
 ## 👤 Author
 
 **Sumit Nayek**
-GitHub: [@Sumit-Nayek](https://github.com/Sumit-Nayek)
 
+- GitHub: [@Sumit-Nayek](https://github.com/Sumit-Nayek)
+- Portfolio: [Link](https://portfolio-1-zeta-eight.vercel.app)
 ---
 
 ⭐ If you find this project useful, consider giving it a star on GitHub!
