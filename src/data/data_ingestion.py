@@ -1,53 +1,68 @@
 import os
+import getpass
+import zipfile
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-# Enterprise configuration paths
-DATA_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/00350/default%20of%20credit%20card%20clients.xls"
-RAW_DATA_PATH = "data/raw/credit_card_default.xlsx"
-TRAIN_DATA_PATH = "data/processed/train.csv"
-TEST_DATA_PATH = "data/processed/test.csv"
+DATASET_SLUG = "adarshsng/lending-club-loan-data-csv"
+RAW_DATA_DIR = "data/raw"
+PROCESSED_DATA_DIR = "data/processed"
 
-def download_raw_data():
-    """Downloads raw data if it doesn't already exist locally."""
-    if not os.path.exists(RAW_DATA_PATH):
-        print("[-] Downloading real-life credit default data from UCI repository...")
-        df = pd.read_excel(DATA_URL, header=1)
-        os.makedirs(os.path.dirname(RAW_DATA_PATH), exist_ok=True)
-        df.to_excel(RAW_DATA_PATH, index=False)
-        print(f"[+] Raw data successfully archived at {RAW_DATA_PATH}")
-    else:
-        print("[*] Raw dataset already exists. Skipping download.")
+def setup_kaggle_auth():
+    """Prompt for credentials at runtime if not already set."""
+    if not os.environ.get("KAGGLE_USERNAME") or not os.environ.get("KAGGLE_KEY"):
+        print("--- Kaggle API Authentication ---")
+        os.environ["KAGGLE_USERNAME"] = input("Enter Kaggle Username: ").strip()
+        os.environ["KAGGLE_KEY"] = getpass.getpass("Enter Kaggle API Key: ").strip()
 
-def process_and_split_data():
-    """Cleans basic structural flaws and executes a repeatable 70/30 stratified split."""
-    print("[-] Reading raw data for extraction, transformation, and load (ETL)...")
-    df = pd.read_excel(RAW_DATA_PATH)
+def download_and_extract():
+    """Download the LendingClub dataset and unzip it."""
+    os.makedirs(RAW_DATA_DIR, exist_ok=True)
+    os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
     
-    # Standardizing target variable name to fit credit nomenclature
-    df = df.rename(columns={'default payment next month': 'default_flag'})
+    setup_kaggle_auth()
+    from kaggle.api.kaggle_api_extended import KaggleApi
     
-    # Drop the internal ID tracking column to avoid artificial predictive power
-    if 'ID' in df.columns:
-        df = df.drop(columns=['ID'])
-        
-    print(f"[*] Full Dataset Shape: {df.shape} | Base Default Rate: {df['default_flag'].mean():.2%}")
+    api = KaggleApi()
+    api.authenticate()
     
-    # 70/30 Stratified Split ensures equal default distribution across both sets
-    print("[-] Executing stratified data split...")
+    print(f"Downloading {DATASET_SLUG}...")
+    api.dataset_download_files(DATASET_SLUG, path=RAW_DATA_DIR, unzip=True)
+    print("Download and extraction complete.")
+
+def process_and_partition():
+    """Ingest raw CSV, filter completed loans, and perform stratified 70/30 split."""
+    csv_path = os.path.join(RAW_DATA_DIR, "loan.csv")
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"Expected file at {csv_path}")
+
+    print("Loading and filtering loan records...")
+    # Select candidate features at origination and outcomes
+    selected_cols = [
+        "loan_status", "loan_amnt", "term", "int_rate", "installment",
+        "grade", "sub_grade", "emp_length", "home_ownership", "annual_inc",
+        "verification_status", "purpose", "dti", "delinq_2yrs", "inq_last_6mths",
+        "open_acc", "pub_rec", "revol_bal", "revol_util", "total_acc", "issue_d"
+    ]
+    
+    df = pd.read_csv(csv_path, usecols=selected_cols, low_memory=False)
+    
+    # Filter completed loan cycles: 0 = Fully Paid, 1 = Default / Charged Off
+    df = df[df["loan_status"].isin(["Fully Paid", "Charged Off"])].copy()
+    df["target"] = (df["loan_status"] == "Charged Off").astype(int)
+    df.drop(columns=["loan_status"], inplace=True)
+    
+    print(f"Dataset Shape: {df.shape} | Default Rate: {df['target'].mean():.2%}")
+
+    # Stratified 70/30 Train/Test split
     train_df, test_df = train_test_split(
-        df, 
-        test_size=0.30, 
-        stratify=df['default_flag'], 
-        random_state=42
+        df, test_size=0.30, random_state=42, stratify=df["target"]
     )
-    
-    os.makedirs(os.path.dirname(TRAIN_DATA_PATH), exist_ok=True)
-    train_df.to_csv(TRAIN_DATA_PATH, index=False)
-    test_df.to_csv(TEST_DATA_PATH, index=False)
-    print(f"[+] Processed train set ({train_df.shape}) saved to {TRAIN_DATA_PATH}")
-    print(f"[+] Processed test set ({test_df.shape}) saved to {TEST_DATA_PATH}")
+
+    train_df.to_parquet(os.path.join(PROCESSED_DATA_DIR, "train.parquet"), index=False)
+    test_df.to_parquet(os.path.join(PROCESSED_DATA_DIR, "test.parquet"), index=False)
+    print("Train/Test sets saved successfully to data/processed/ as Parquet.")
 
 if __name__ == "__main__":
-    download_raw_data()
-    process_and_split_data()
+    download_and_extract()
+    process_and_partition()
