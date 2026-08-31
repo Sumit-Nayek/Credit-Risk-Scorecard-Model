@@ -75,7 +75,6 @@ Open the Jupyter notebooks in the `notebooks/` folder and run them in order to r
 | Metric | Score |
 |--------|-------|
 | AUC-ROC | 78% |
-| KS Statistic | 0 |
 | Gini Coefficient | 0.96 |
 
 
