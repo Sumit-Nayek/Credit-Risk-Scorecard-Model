@@ -31,13 +31,12 @@ def download_and_extract():
     print("Download and extraction complete.")
 
 def process_and_partition():
-    """Ingest raw CSV, filter completed loans, and perform stratified 70/30 split."""
+    """Ingest raw CSV in memory-efficient chunks, filter completed loans, and partition."""
     csv_path = os.path.join(RAW_DATA_DIR, "loan.csv")
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"Expected file at {csv_path}")
 
-    print("Loading and filtering loan records...")
-    # Select candidate features at origination and outcomes
+    print("Loading and filtering loan records in chunks to manage memory...")
     selected_cols = [
         "loan_status", "loan_amnt", "term", "int_rate", "installment",
         "grade", "sub_grade", "emp_length", "home_ownership", "annual_inc",
@@ -45,23 +44,28 @@ def process_and_partition():
         "open_acc", "pub_rec", "revol_bal", "revol_util", "total_acc", "issue_d"
     ]
     
-    df = pd.read_csv(csv_path, usecols=selected_cols, low_memory=False)
-    
-    # Filter completed loan cycles: 0 = Fully Paid, 1 = Default / Charged Off
-    df = df[df["loan_status"].isin(["Fully Paid", "Charged Off"])].copy()
-    df["target"] = (df["loan_status"] == "Charged Off").astype(int)
-    df.drop(columns=["loan_status"], inplace=True)
-    
-    print(f"Dataset Shape: {df.shape} | Default Rate: {df['target'].mean():.2%}")
+    chunks = []
+    # Stream in chunks of 100,000 rows to keep RAM usage low
+    for i, chunk in enumerate(pd.read_csv(csv_path, usecols=selected_cols, chunksize=100000, low_memory=False)):
+        filtered_chunk = chunk[chunk["loan_status"].isin(["Fully Paid", "Charged Off"])].copy()
+        filtered_chunk["target"] = (filtered_chunk["loan_status"] == "Charged Off").astype("int8")
+        filtered_chunk.drop(columns=["loan_status"], inplace=True)
+        chunks.append(filtered_chunk)
+        print(f"Processed chunk {i+1}... Retained records: {sum(len(c) for c in chunks):,}")
 
-    # Stratified 70/30 Train/Test split
+    df = pd.concat(chunks, ignore_index=True)
+    del chunks  # Free memory immediately
+    
+    print(f"\nFinal Dataset Shape: {df.shape} | Default Rate: {df['target'].mean():.2%}")
+
+    print("Executing stratified 70/30 train/test partition...")
     train_df, test_df = train_test_split(
         df, test_size=0.30, random_state=42, stratify=df["target"]
     )
 
     train_df.to_parquet(os.path.join(PROCESSED_DATA_DIR, "train.parquet"), index=False)
     test_df.to_parquet(os.path.join(PROCESSED_DATA_DIR, "test.parquet"), index=False)
-    print("Train/Test sets saved successfully to data/processed/ as Parquet.")
+    print("Train/Test partitions successfully saved to data/processed/ as Parquet.")
 
 if __name__ == "__main__":
     download_and_extract()
